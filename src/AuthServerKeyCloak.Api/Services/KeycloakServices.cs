@@ -1,13 +1,13 @@
-﻿using AuthServerKeyCloak.Api.Models;
-using System.Runtime;
-using System.Text.Json;
-using static System.Net.WebRequestMethods;
+using AuthServerKeyCloak.Api.Models;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
 
 namespace AuthServerKeyCloak.Api.Services
 {
     public interface IKeycloakServices
     {
         Task<LoginResponse> GetTokenAsync(LoginModel loginModel);
+        Task CreateUserAsync(RegisterModel registerModel);
     }
 
     public class KeycloakServices : IKeycloakServices
@@ -32,7 +32,6 @@ namespace AuthServerKeyCloak.Api.Services
                 new KeyValuePair<string, string>("grant_type", "password")
             });
 
-
             var endpoint = _configuration.GetValue<string>("Keycloak:Endpoints:Token");
             var response = await _httpClient.PostAsync(endpoint, content);
 
@@ -40,6 +39,41 @@ namespace AuthServerKeyCloak.Api.Services
 
             var keycloakToken = await response.Content.ReadFromJsonAsync<KeycloakToken>();
             return new LoginResponse(keycloakToken);
+        }
+
+        public async Task CreateUserAsync(RegisterModel registerModel)
+        {
+            var adminLogin = new LoginModel
+            {
+                Username = _configuration.GetValue<string>("Keycloak:AdminUser:Username"),
+                Password = _configuration.GetValue<string>("Keycloak:AdminUser:Password")
+            };
+
+            var adminToken = await GetTokenAsync(adminLogin);
+
+            var userData = new
+            {
+                firstName = registerModel.FirstName,
+                lastName = registerModel.LastName,
+                email = registerModel.Email,
+                username = registerModel.Username,
+                enabled = true,
+                credentials = new[]
+                {
+                    new { type = "password", value = registerModel.Password, temporary = false }
+                }
+            };
+
+            var endpoint = _configuration.GetValue<string>("Keycloak:AdminUrl") + _configuration.GetValue<string>("Keycloak:Endpoints:Users");
+
+            var request = new HttpRequestMessage(HttpMethod.Post, endpoint)
+            {
+                Content = JsonContent.Create(userData)
+            };
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", adminToken.AccessToken);
+
+            var response = await _httpClient.SendAsync(request);
+            response.EnsureSuccessStatusCode();
         }
     }
 }

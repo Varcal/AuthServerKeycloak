@@ -1,6 +1,5 @@
-﻿using AuthServerKeyCloak.Api.Models;
+using AuthServerKeyCloak.Api.Models;
 using AuthServerKeyCloak.Api.Services;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AuthServerKeyCloak.Api.Controllers
@@ -21,6 +20,13 @@ namespace AuthServerKeyCloak.Api.Controllers
         {
             var response = await _keycloakServices.GetTokenAsync(model);
             return Ok(response);
+        }
+
+        [HttpPost("register")]
+        public async Task<ActionResult> Register([FromBody] RegisterModel model)
+        {
+            await _keycloakServices.CreateUserAsync(model);
+            return Ok();
         }
     }
 }
