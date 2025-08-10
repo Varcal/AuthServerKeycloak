@@ -1,5 +1,6 @@
-
 using AuthServerKeyCloak.Api.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 
 namespace AuthServerKeyCloak.Api
 {
@@ -10,15 +11,30 @@ namespace AuthServerKeyCloak.Api
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
-           
-            
+
             var url = builder.Configuration.GetValue<string>("Keycloak:BaseUrl");
 
             builder.Services.AddHttpClient<IKeycloakServices, KeycloakServices>(c =>
+            {
+                c.BaseAddress = new Uri(url);
+            });
+
+            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
                 {
-                    c.BaseAddress = new Uri(url);
+                    options.Authority = url;
+                    options.RequireHttpsMetadata = false;
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateAudience = false,
+                        RoleClaimType = "roles"
+                    };
                 });
 
+            builder.Services.AddAuthorization(options =>
+            {
+                options.AddPolicy("RealmAdmin", policy => policy.RequireClaim("roles", "realm-admin"));
+            });
 
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -36,8 +52,8 @@ namespace AuthServerKeyCloak.Api
 
             //app.UseHttpsRedirection();
 
+            app.UseAuthentication();
             app.UseAuthorization();
-
 
             app.MapControllers();
 
