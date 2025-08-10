@@ -41,8 +41,17 @@ namespace AuthServerKeyCloak.Api.Services
             return new LoginResponse(keycloakToken);
         }
 
+
         public async Task CreateUserAsync(RegisterModel registerModel, string accessToken)
         {
+            var adminLogin = new LoginModel
+            {
+                Username = _configuration.GetValue<string>("Keycloak:AdminUser:Username"),
+                Password = _configuration.GetValue<string>("Keycloak:AdminUser:Password")
+            };
+
+            var adminToken = await GetTokenAsync(adminLogin);
+
             var userData = new
             {
                 firstName = registerModel.FirstName,
@@ -56,13 +65,15 @@ namespace AuthServerKeyCloak.Api.Services
                 }
             };
 
-            var endpoint = _configuration.GetValue<string>("Keycloak:AdminUrl") +
-                           _configuration.GetValue<string>("Keycloak:Endpoints:Users");
+
+            var endpoint = $"{_configuration.GetValue<string>("Keycloak:AdminUrl")}  {_configuration.GetValue<string>("Keycloak:Endpoints:Users}");
+
 
             var request = new HttpRequestMessage(HttpMethod.Post, endpoint)
             {
                 Content = JsonContent.Create(userData)
             };
+
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
             var response = await _httpClient.SendAsync(request);
