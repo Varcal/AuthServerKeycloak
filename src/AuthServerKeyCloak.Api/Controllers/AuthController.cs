@@ -1,5 +1,6 @@
 using AuthServerKeyCloak.Api.Models;
 using AuthServerKeyCloak.Api.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AuthServerKeyCloak.Api.Controllers
@@ -22,9 +23,14 @@ namespace AuthServerKeyCloak.Api.Controllers
             return Ok(response);
         }
 
+
+        [Authorize(Policy = "RealmAdmin")]
         [HttpPost("register")]
         public async Task<ActionResult> Register([FromBody] RegisterModel model)
         {
+            var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            await _keycloakServices.CreateUserAsync(model, accessToken);
+
             await _keycloakServices.CreateUserAsync(model);
             return Ok();
         }
