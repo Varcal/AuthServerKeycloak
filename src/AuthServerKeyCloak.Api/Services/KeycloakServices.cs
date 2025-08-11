@@ -66,7 +66,7 @@ namespace AuthServerKeyCloak.Api.Services
             };
 
 
-            var endpoint = $"{_configuration.GetValue<string>("Keycloak:AdminUrl")}  {_configuration.GetValue<string>("Keycloak:Endpoints:Users}");
+            var endpoint = $"{_configuration.GetValue<string>("Keycloak:AdminUrl")}{_configuration.GetValue<string>("Keycloak:Endpoints:Users")}";
 
 
             var request = new HttpRequestMessage(HttpMethod.Post, endpoint)

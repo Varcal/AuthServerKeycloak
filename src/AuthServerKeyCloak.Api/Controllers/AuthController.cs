@@ -31,7 +31,6 @@ namespace AuthServerKeyCloak.Api.Controllers
             var accessToken = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
             await _keycloakServices.CreateUserAsync(model, accessToken);
 
-            await _keycloakServices.CreateUserAsync(model);
             return Ok();
         }
     }
